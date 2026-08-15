@@ -4,6 +4,10 @@ import { semanticContract } from './semanticContract.js';
 import type { PublishRequest, PublishResult, ReyfinAppManifest } from '../shared/types.js';
 
 const manifestStore = new Map<string, ReyfinAppManifest>();
+const companionWidgetDashboard = {
+  id: '0b55a972-7834-4a7f-90a0-75f53f2d4d2a',
+  displayName: 'hospitality-demo-client-reyfin-pos-hospitality-widgets'
+};
 
 const execFileAsync = promisify(execFile);
 
@@ -66,6 +70,8 @@ export async function publishAppBackend(request: PublishRequest, manifest: Reyfi
     workspaceName: semanticContract.binding.workspaceName,
     manifestId,
     fabricUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/items/${item.id}`,
+    widgetDashboardItemId: companionWidgetDashboard.id,
+    widgetDashboardUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/realTimeDashboards/${companionWidgetDashboard.id}`,
     storage: {
       provider: 'memory',
       status: 'fallback',

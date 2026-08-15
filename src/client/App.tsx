@@ -110,7 +110,8 @@ export default function App() {
               <p><strong>Item ID:</strong> {publishResult.appBackendItemId}</p>
               <p><strong>Manifest:</strong> {publishResult.manifestId}</p>
               <p><strong>Storage:</strong> {publishResult.storage.provider} ({publishResult.storage.status})</p>
-              <a href={publishResult.fabricUrl} target="_blank" rel="noreferrer">Open Fabric item</a>
+              <a href={publishResult.widgetDashboardUrl ?? publishResult.fabricUrl} target="_blank" rel="noreferrer">Open visible widgets</a>
+              <a href={publishResult.fabricUrl} target="_blank" rel="noreferrer">Open AppBackend</a>
             </div>
           )}
           {manifest && <details><summary>Manifest JSON</summary><pre>{JSON.stringify(manifest, null, 2)}</pre></details>}

@@ -96,6 +96,8 @@ export interface PublishResult {
   workspaceName: string;
   manifestId: string;
   fabricUrl: string;
+  widgetDashboardItemId?: string;
+  widgetDashboardUrl?: string;
   storage: {
     provider: 'memory' | 'fabric-sql';
     status: 'stored' | 'fallback';
