@@ -82,3 +82,24 @@ export interface ReyfinAppManifest {
   dashboardSpec: ReyfinDashboardSpec;
   mcpTools: string[];
 }
+
+export interface PublishRequest {
+  tenantId: string;
+  appName: string;
+  dashboardSpec: ReyfinDashboardSpec;
+}
+
+export interface PublishResult {
+  appBackendItemId: string;
+  appBackendDisplayName: string;
+  workspaceId: string;
+  workspaceName: string;
+  manifestId: string;
+  fabricUrl: string;
+  storage: {
+    provider: 'memory' | 'fabric-sql';
+    status: 'stored' | 'fallback';
+    message: string;
+  };
+  manifest: ReyfinAppManifest;
+}

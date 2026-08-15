@@ -2,9 +2,9 @@ import cors from 'cors';
 import express, { type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import type { DashboardRequest, ReyfinDashboardSpec } from '../shared/types.js';
+import type { DashboardRequest, PublishRequest, ReyfinDashboardSpec } from '../shared/types.js';
 import { generateDashboardSpec, mcpTools, prepareReyfinAppManifest } from './dashboardAgent.js';
-import { executeDaxQuery } from './fabric.js';
+import { executeDaxQuery, getStoredManifest, publishAppBackend } from './fabric.js';
 import { semanticContract } from './semanticContract.js';
 
 const clientDist = path.join(process.cwd(), 'dist', 'client');
@@ -70,6 +70,39 @@ export function createApp() {
       dimensionNames: []
     });
     res.status(201).json({ manifest: prepareReyfinAppManifest(appName, dashboardSpec) });
+  });
+
+  app.post('/api/tools/publish-reyfin-app', async (req: Request, res: Response) => {
+    try {
+      const body = req.body as Partial<PublishRequest>;
+      const dashboardSpec = body.dashboardSpec ?? lastDashboardSpec ?? generateDashboardSpec({
+        prompt: 'Build a hospitality POS dashboard.',
+        audience: 'executive',
+        metricNames: [],
+        dimensionNames: []
+      });
+      const appName = body.appName ?? 'reyfin-pos-hospitality';
+      const tenantId = body.tenantId ?? 'demo-tenant';
+      const manifest = prepareReyfinAppManifest(appName, dashboardSpec);
+      const result = await publishAppBackend({ tenantId, appName, dashboardSpec }, manifest);
+      res.status(201).json({ result });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Publish failed' });
+    }
+  });
+
+  app.get('/api/manifests/:id', (req: Request, res: Response) => {
+    const manifestId = req.params.id;
+    if (!manifestId) {
+      res.status(400).json({ error: 'Manifest id is required' });
+      return;
+    }
+    const manifest = getStoredManifest(manifestId);
+    if (!manifest) {
+      res.status(404).json({ error: 'Manifest not found' });
+      return;
+    }
+    res.json({ manifest });
   });
 
   if (existsSync(clientDist)) {

@@ -32,5 +32,8 @@ Open the UI at `http://localhost:3000` after `npm run dev`, or use Vite with `np
 - `POST /api/tools/generate-dashboard`
 - `POST /api/tools/execute-dax`
 - `POST /api/tools/prepare-reyfin-app`
+- `POST /api/tools/publish-reyfin-app`
 
 `execute-dax` uses the signed-in Azure CLI identity to acquire a Power BI API token.
+
+`publish-reyfin-app` creates or reuses a Fabric `AppBackend` item in `rayfin-apps-ws` and stores the generated dashboard manifest in the app runtime. Fabric SQL manifest table creation was tested but blocked by database policy (`Microsoft.Sql/Sqlservers/Databases/Schemas/Tables/Create` denied), so SQL persistence is left as a follow-up once policy/RBAC permits DDL.

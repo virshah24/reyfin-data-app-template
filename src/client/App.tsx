@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { McpToolDescriptor, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
-import { executeDax, fetchModel, fetchTools, generateDashboard, prepareManifest } from './api';
+import type { McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
+import { executeDax, fetchModel, fetchTools, generateDashboard, prepareManifest, publishApp } from './api';
 
 export default function App() {
   const [model, setModel] = useState<SemanticContract>();
@@ -10,6 +10,7 @@ export default function App() {
   const [prompt, setPrompt] = useState('Build an executive dashboard for hospitality POS sales, transaction trends, and fraud signals.');
   const [dashboard, setDashboard] = useState<ReyfinDashboardSpec>();
   const [manifest, setManifest] = useState<ReyfinAppManifest>();
+  const [publishResult, setPublishResult] = useState<PublishResult>();
   const [daxResult, setDaxResult] = useState<unknown>();
   const [error, setError] = useState<string>();
 
@@ -39,6 +40,7 @@ export default function App() {
     });
     setDashboard(spec);
     setManifest(undefined);
+    setPublishResult(undefined);
   };
 
   const runSmokeTest = async () => {
@@ -46,7 +48,10 @@ export default function App() {
   };
 
   const packageApp = async () => {
-    setManifest(await prepareManifest('reyfin-pos-hospitality'));
+    if (!dashboard) return;
+    const prepared = await prepareManifest('reyfin-pos-hospitality');
+    setManifest(prepared);
+    setPublishResult(await publishApp('hospitality-demo-client', 'reyfin-pos-hospitality', dashboard));
   };
 
   return (
@@ -95,11 +100,20 @@ export default function App() {
 
         <article className="card">
           <span className="step">3</span>
-          <h2>Package AppBackend manifest</h2>
-          <p>Package the generated dashboard spec plus MCP tools for a Reyfin/Fabric AppBackend item.</p>
-          <button className="primary" disabled={!dashboard} onClick={packageApp}>Prepare manifest</button>
+          <h2>Publish AppBackend</h2>
+          <p>Create or update a tenant-specific Fabric AppBackend and store the dashboard manifest.</p>
+          <button className="primary" disabled={!dashboard} onClick={packageApp}>Publish to Fabric</button>
           <p className="small">{tools.length} MCP-style tools available</p>
-          {manifest && <pre>{JSON.stringify(manifest, null, 2)}</pre>}
+          {publishResult && (
+            <div className="publish-result">
+              <p><strong>Fabric item:</strong> {publishResult.appBackendDisplayName}</p>
+              <p><strong>Item ID:</strong> {publishResult.appBackendItemId}</p>
+              <p><strong>Manifest:</strong> {publishResult.manifestId}</p>
+              <p><strong>Storage:</strong> {publishResult.storage.provider} ({publishResult.storage.status})</p>
+              <a href={publishResult.fabricUrl} target="_blank" rel="noreferrer">Open Fabric item</a>
+            </div>
+          )}
+          {manifest && <details><summary>Manifest JSON</summary><pre>{JSON.stringify(manifest, null, 2)}</pre></details>}
         </article>
       </section>
 

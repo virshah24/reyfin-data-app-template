@@ -1,4 +1,4 @@
-import type { DashboardRequest, McpToolDescriptor, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
+import type { DashboardRequest, McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -41,4 +41,14 @@ export async function prepareManifest(appName: string): Promise<ReyfinAppManifes
   });
   if (!response.ok) throw new Error('Unable to prepare app manifest');
   return (await response.json()).manifest;
+}
+
+export async function publishApp(tenantId: string, appName: string, dashboardSpec: ReyfinDashboardSpec): Promise<PublishResult> {
+  const response = await fetch('/api/tools/publish-reyfin-app', {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ tenantId, appName, dashboardSpec })
+  });
+  if (!response.ok) throw new Error((await response.json()).error ?? 'Unable to publish app');
+  return (await response.json()).result;
 }

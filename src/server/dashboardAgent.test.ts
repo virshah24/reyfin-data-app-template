@@ -32,5 +32,6 @@ test('prepares an AppBackend manifest with MCP tool names', () => {
   const manifest = prepareReyfinAppManifest('reyfin-pos-hospitality', spec);
   assert.equal(manifest.fabricItemType, 'AppBackend');
   assert.ok(manifest.mcpTools.includes('generate_dashboard_spec'));
-  assert.equal(mcpTools.length, 4);
+  assert.ok(manifest.mcpTools.includes('publish_reyfin_app'));
+  assert.equal(mcpTools.length, 5);
 });

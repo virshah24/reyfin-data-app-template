@@ -36,6 +36,19 @@ export const mcpTools: McpToolDescriptor[] = [
     name: 'prepare_reyfin_app_manifest',
     description: 'Package a dashboard spec and model binding as a Reyfin AppBackend manifest for Fabric publishing.',
     inputSchema: { type: 'object', properties: { appName: { type: 'string' } } }
+  },
+  {
+    name: 'publish_reyfin_app',
+    description: 'Create or update a tenant-specific Fabric AppBackend item and store the dashboard manifest.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tenantId: { type: 'string' },
+        appName: { type: 'string' },
+        dashboardSpec: { type: 'object' }
+      },
+      required: ['tenantId', 'appName']
+    }
   }
 ];
 
