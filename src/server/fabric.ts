@@ -6,7 +6,8 @@ import type { PublishRequest, PublishResult, ReyfinAppManifest } from '../shared
 const manifestStore = new Map<string, ReyfinAppManifest>();
 const companionWidgetDashboard = {
   id: '0b55a972-7834-4a7f-90a0-75f53f2d4d2a',
-  displayName: 'hospitality-demo-client-reyfin-pos-hospitality-widgets'
+  displayName: 'hospitality-demo-client-reyfin-pos-hospitality-widgets',
+  note: 'Visible companion KQLDashboard with manifest-aligned placeholder widgets. It mirrors selected dashboard widget names while the semantic-model-to-Reyfin visual adapter is implemented.'
 };
 
 const execFileAsync = promisify(execFile);
@@ -75,7 +76,7 @@ export async function publishAppBackend(request: PublishRequest, manifest: Reyfi
     storage: {
       provider: 'memory',
       status: 'fallback',
-      message: 'Manifest stored in the app runtime. Fabric SQL table creation was attempted but denied by policy action Microsoft.Sql/Sqlservers/Databases/Schemas/Tables/Create.'
+      message: `Manifest stored in the app runtime. Fabric SQL table creation was attempted but denied by policy action Microsoft.Sql/Sqlservers/Databases/Schemas/Tables/Create. ${companionWidgetDashboard.note}`
     },
     manifest
   };
