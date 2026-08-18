@@ -98,6 +98,12 @@ export interface PublishResult {
   fabricUrl: string;
   widgetDashboardItemId?: string;
   widgetDashboardUrl?: string;
+  widgetAdapter?: {
+    status: 'updated' | 'skipped';
+    widgetCount: number;
+    widgetTitles: string[];
+    notes: string[];
+  };
   storage: {
     provider: 'memory' | 'fabric-sql';
     status: 'stored' | 'fallback';
