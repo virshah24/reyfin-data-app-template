@@ -2,15 +2,9 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { semanticContract } from './semanticContract.js';
 import type { PublishRequest, PublishResult, ReyfinAppManifest } from '../shared/types.js';
-import { adaptSemanticDashboardToKqlDashboard } from './visualAdapter.js';
+import { prepareAppBackendDefinitionManifest } from './dashboardAgent.js';
 
 const manifestStore = new Map<string, ReyfinAppManifest>();
-const companionWidgetDashboard = {
-  id: '0b55a972-7834-4a7f-90a0-75f53f2d4d2a',
-  displayName: 'hospitality-demo-client-reyfin-pos-hospitality-widgets',
-  note: 'Visible companion KQLDashboard with manifest-aligned placeholder widgets. It mirrors selected dashboard widget names while the semantic-model-to-Reyfin visual adapter is implemented.'
-};
-
 const execFileAsync = promisify(execFile);
 
 export async function executeDaxQuery(query: string): Promise<unknown> {
@@ -62,7 +56,7 @@ export async function publishAppBackend(request: PublishRequest, manifest: Reyfi
   const displayName = `${request.tenantId}-${request.appName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const existing = await findFabricItem(token, displayName, 'AppBackend');
   const item = existing ?? await createAppBackend(token, displayName, request);
-  const widgetAdapter = await updateCompanionWidgetDashboard(token, manifest);
+  const appBackendDefinition = prepareAppBackendDefinitionManifest(manifest);
   const manifestId = `${request.tenantId}-${request.appName}-${Date.now().toString(36)}`;
   manifestStore.set(manifestId, manifest);
 
@@ -73,13 +67,16 @@ export async function publishAppBackend(request: PublishRequest, manifest: Reyfi
     workspaceName: semanticContract.binding.workspaceName,
     manifestId,
     fabricUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/items/${item.id}`,
-    widgetDashboardItemId: companionWidgetDashboard.id,
-    widgetDashboardUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/realTimeDashboards/${companionWidgetDashboard.id}`,
-    widgetAdapter,
+    appBackendDefinition: {
+      status: 'generated',
+      definitionWriteStatus: 'unsupported-by-public-api',
+      message: 'Generated AppBackend manifest from semantic model. Fabric public APIs currently reject AppBackend create-with-definition and updateDefinition, so the manifest is returned and stored by this app for the Rayfin runtime/adapter to consume.',
+      manifest: appBackendDefinition
+    },
     storage: {
       provider: 'memory',
       status: 'fallback',
-      message: `Manifest stored in the app runtime. Fabric SQL table creation was attempted but denied by policy action Microsoft.Sql/Sqlservers/Databases/Schemas/Tables/Create. ${companionWidgetDashboard.note}`
+      message: 'Manifest stored in the app runtime. Fabric SQL table creation was attempted but denied by policy action Microsoft.Sql/Sqlservers/Databases/Schemas/Tables/Create.'
     },
     manifest
   };
@@ -139,54 +136,3 @@ async function createAppBackend(token: string, displayName: string, request: Pub
   return response.json() as Promise<{ id: string; displayName: string; type: string }>;
 }
 
-async function updateCompanionWidgetDashboard(token: string, manifest: ReyfinAppManifest): Promise<NonNullable<PublishResult['widgetAdapter']>> {
-  try {
-    const definitionResponse = await fetch(`https://api.fabric.microsoft.com/v1/workspaces/${semanticContract.binding.workspaceId}/items/${companionWidgetDashboard.id}/getDefinition`, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${token}`,
-        'content-type': 'application/json'
-      },
-      body: '{}'
-    });
-    if (!definitionResponse.ok) {
-      throw new Error(`getDefinition failed: ${definitionResponse.status} ${await definitionResponse.text()}`);
-    }
-    const definitionPayload = await definitionResponse.json() as {
-      definition: {
-        parts: Array<{ path: string; payload: string; payloadType: string }>;
-      };
-    };
-    const dashboardPart = definitionPayload.definition.parts.find((part) => part.path === 'RealTimeDashboard.json');
-    if (!dashboardPart) throw new Error('RealTimeDashboard.json part not found.');
-
-    const currentDefinition = JSON.parse(Buffer.from(dashboardPart.payload, 'base64').toString('utf8')) as unknown;
-    const adapted = adaptSemanticDashboardToKqlDashboard(currentDefinition, manifest.dashboardSpec);
-    dashboardPart.payload = Buffer.from(JSON.stringify(adapted.definition, null, 2), 'utf8').toString('base64');
-
-    const updateResponse = await fetch(`https://api.fabric.microsoft.com/v1/workspaces/${semanticContract.binding.workspaceId}/items/${companionWidgetDashboard.id}/updateDefinition`, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${token}`,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(definitionPayload)
-    });
-    if (!updateResponse.ok) {
-      throw new Error(`updateDefinition failed: ${updateResponse.status} ${await updateResponse.text()}`);
-    }
-    return {
-      status: 'updated',
-      widgetCount: adapted.result.widgetCount,
-      widgetTitles: adapted.result.widgetTitles,
-      notes: adapted.result.adapterNotes
-    };
-  } catch (error) {
-    return {
-      status: 'skipped',
-      widgetCount: 0,
-      widgetTitles: [],
-      notes: [error instanceof Error ? error.message : 'Unable to update companion widget dashboard.']
-    };
-  }
-}

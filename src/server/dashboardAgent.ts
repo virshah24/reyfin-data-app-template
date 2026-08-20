@@ -1,4 +1,4 @@
-import type { DashboardRequest, DashboardVisualSpec, McpToolDescriptor, ReyfinAppManifest, ReyfinDashboardSpec } from '../shared/types.js';
+import type { AppBackendDefinitionManifest, DashboardRequest, DashboardVisualSpec, McpToolDescriptor, ReyfinAppManifest, ReyfinDashboardSpec } from '../shared/types.js';
 import { semanticContract } from './semanticContract.js';
 
 const colors = ['#67e8f9', '#a78bfa', '#34d399', '#f59e0b', '#fb7185'];
@@ -121,5 +121,27 @@ export function prepareReyfinAppManifest(appName: string, dashboardSpec: ReyfinD
     semanticModelId: semanticContract.binding.semanticModelId,
     dashboardSpec,
     mcpTools: mcpTools.map((tool) => tool.name)
+  };
+}
+
+export function prepareAppBackendDefinitionManifest(manifest: ReyfinAppManifest): AppBackendDefinitionManifest {
+  const decodedJson = {
+    schema: 'reyfin.appBackend.v1' as const,
+    appName: manifest.appName,
+    semanticModel: manifest.dashboardSpec.modelBinding,
+    dashboard: manifest.dashboardSpec,
+    tools: manifest.mcpTools
+  };
+  const payload = Buffer.from(JSON.stringify(decodedJson, null, 2), 'utf8').toString('base64');
+  return {
+    format: 'AppBackendManifest',
+    parts: [
+      {
+        path: 'reyfin-app-manifest.json',
+        payloadType: 'InlineBase64',
+        payload
+      }
+    ],
+    decodedJson
   };
 }

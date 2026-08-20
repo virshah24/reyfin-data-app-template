@@ -83,6 +83,22 @@ export interface ReyfinAppManifest {
   mcpTools: string[];
 }
 
+export interface AppBackendDefinitionManifest {
+  format: 'AppBackendManifest';
+  parts: Array<{
+    path: string;
+    payloadType: 'InlineBase64';
+    payload: string;
+  }>;
+  decodedJson: {
+    schema: 'reyfin.appBackend.v1';
+    appName: string;
+    semanticModel: FabricModelBinding;
+    dashboard: ReyfinDashboardSpec;
+    tools: string[];
+  };
+}
+
 export interface PublishRequest {
   tenantId: string;
   appName: string;
@@ -96,13 +112,11 @@ export interface PublishResult {
   workspaceName: string;
   manifestId: string;
   fabricUrl: string;
-  widgetDashboardItemId?: string;
-  widgetDashboardUrl?: string;
-  widgetAdapter?: {
-    status: 'updated' | 'skipped';
-    widgetCount: number;
-    widgetTitles: string[];
-    notes: string[];
+  appBackendDefinition: {
+    status: 'generated';
+    definitionWriteStatus: 'unsupported-by-public-api';
+    message: string;
+    manifest: AppBackendDefinitionManifest;
   };
   storage: {
     provider: 'memory' | 'fabric-sql';
