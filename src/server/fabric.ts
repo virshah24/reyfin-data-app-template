@@ -70,6 +70,7 @@ export async function publishAppBackend(request: PublishRequest, manifest: Reyfi
     workspaceName: semanticContract.binding.workspaceName,
     manifestId,
     fabricUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/items/${item.id}`,
+    workspaceUrl: `https://app.fabric.microsoft.com/groups/${semanticContract.binding.workspaceId}/list`,
     appBackendDefinition: {
       status: 'generated',
       definitionWriteStatus: 'unsupported-by-public-api',

@@ -45,6 +45,8 @@ If DAX returns `401`, the active Azure CLI user does not have access to the Fabr
 
 Fabric `AppBackend` items are backend artifacts and may appear visually blank in the Fabric UX. The app now generates an `AppBackendManifest` from the semantic model and selected dashboard spec. Fabric public APIs currently reject AppBackend create-with-definition and updateDefinition, so the manifest is returned in the publish response and stored in the app runtime for the Rayfin runtime/adapter to consume.
 
+Fabric deep links to `AppBackend` item IDs may show "not found" in the UX even when the item exists through the API. The UI links to the workspace list and shows the exact AppBackend name/id to search for.
+
 ## Container deployment
 
 ```powershell

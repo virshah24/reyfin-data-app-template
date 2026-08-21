@@ -113,7 +113,8 @@ export default function App() {
               <p><strong>Manifest:</strong> {publishResult.manifestId}</p>
               <p><strong>Storage:</strong> {publishResult.storage.provider} ({publishResult.storage.status})</p>
               <p><strong>Definition:</strong> {publishResult.appBackendDefinition.status} ({publishResult.appBackendDefinition.definitionWriteStatus})</p>
-              <a href={publishResult.fabricUrl} target="_blank" rel="noreferrer">Open AppBackend</a>
+              <a href={publishResult.workspaceUrl} target="_blank" rel="noreferrer">Open Fabric workspace</a>
+              <small>Find item by name: {publishResult.appBackendDisplayName}</small>
             </div>
           )}
           {manifest && <details><summary>Manifest JSON</summary><pre>{JSON.stringify(manifest, null, 2)}</pre></details>}

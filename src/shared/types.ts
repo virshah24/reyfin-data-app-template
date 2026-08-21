@@ -112,6 +112,7 @@ export interface PublishResult {
   workspaceName: string;
   manifestId: string;
   fabricUrl: string;
+  workspaceUrl: string;
   appBackendDefinition: {
     status: 'generated';
     definitionWriteStatus: 'unsupported-by-public-api';
