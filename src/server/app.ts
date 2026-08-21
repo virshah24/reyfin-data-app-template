@@ -5,6 +5,8 @@ import path from 'node:path';
 import type { DashboardRequest, PublishRequest, ReyfinDashboardSpec } from '../shared/types.js';
 import { generateDashboardSpec, mcpTools, prepareReyfinAppManifest } from './dashboardAgent.js';
 import { executeDaxQuery, getStoredManifest, publishAppBackend } from './fabric.js';
+import { handleMcpRequest } from './mcpGateway.js';
+import { getUsage, listTenants } from './monetization.js';
 import { semanticContract } from './semanticContract.js';
 
 const clientDist = path.join(process.cwd(), 'dist', 'client');
@@ -37,6 +39,12 @@ export function createApp() {
 
   app.get('/api/tools', (_req: Request, res: Response) => {
     res.json({ tools: mcpTools });
+  });
+
+  app.post('/mcp', handleMcpRequest);
+
+  app.get('/api/tenants', (_req: Request, res: Response) => {
+    res.json({ tenants: listTenants().map((tenant) => ({ ...tenant, usage: getUsage(tenant.tenantId) })) });
   });
 
   app.post('/api/tools/generate-dashboard', (req: Request, res: Response) => {

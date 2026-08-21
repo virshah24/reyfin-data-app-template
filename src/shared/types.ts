@@ -125,3 +125,28 @@ export interface PublishResult {
   };
   manifest: ReyfinAppManifest;
 }
+
+export type TenantPlan = 'starter' | 'growth' | 'enterprise';
+
+export interface TenantEntitlement {
+  tenantId: string;
+  displayName: string;
+  plan: TenantPlan;
+  monthlyDashboardLimit: number;
+  monthlyDaxQueryLimit: number;
+  allowedMetrics: string[];
+  allowedDimensions: string[];
+}
+
+export interface TenantUsage {
+  tenantId: string;
+  dashboardsGenerated: number;
+  daxQueriesExecuted: number;
+  manifestsPublished: number;
+}
+
+export interface MeteredToolResult<T> {
+  tenant: TenantEntitlement;
+  usage: TenantUsage;
+  result: T;
+}

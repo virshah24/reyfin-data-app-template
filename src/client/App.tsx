@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
-import { executeDax, fetchModel, fetchTools, generateDashboard, prepareManifest, publishApp } from './api';
+import type { McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract, TenantEntitlement, TenantUsage } from '../shared/types';
+import { executeDax, fetchModel, fetchTenants, fetchTools, generateDashboard, prepareManifest, publishApp } from './api';
 
 export default function App() {
   const [model, setModel] = useState<SemanticContract>();
   const [tools, setTools] = useState<McpToolDescriptor[]>([]);
+  const [tenants, setTenants] = useState<Array<TenantEntitlement & { usage: TenantUsage }>>([]);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['salesAmount', 'transactionCount', 'fraudSignals']);
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(['location', 'time']);
   const [prompt, setPrompt] = useState('Build an executive dashboard for hospitality POS sales, transaction trends, and fraud signals.');
@@ -15,10 +16,11 @@ export default function App() {
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    Promise.all([fetchModel(), fetchTools()])
-      .then(([contract, descriptors]) => {
+    Promise.all([fetchModel(), fetchTools(), fetchTenants()])
+      .then(([contract, descriptors, tenantPlans]) => {
         setModel(contract);
         setTools(descriptors);
+        setTenants(tenantPlans);
       })
       .catch((err: Error) => setError(err.message));
   }, []);
@@ -59,7 +61,7 @@ export default function App() {
       <section className="hero">
         <span className="eyebrow">Reyfin data app template</span>
         <h1>MCP-style dashboard builder for raymodel-POS-Hospitality.</h1>
-        <p>One semantic model binding, one dashboard agent contract, and a clean path to package a Fabric AppBackend manifest.</p>
+        <p>Tenant-aware MCP/container gateway for ISVs to monetize on-demand Reyfin dashboards over a governed Fabric semantic model.</p>
       </section>
 
       {error && <p className="notice danger">{error}</p>}
@@ -116,6 +118,23 @@ export default function App() {
           )}
           {manifest && <details><summary>Manifest JSON</summary><pre>{JSON.stringify(manifest, null, 2)}</pre></details>}
         </article>
+      </section>
+
+      <section className="dashboard">
+        <h2>ISV monetization gateway</h2>
+        <div className="tenant-grid">
+          {tenants.map((tenant) => (
+            <div className="tenant-card" key={tenant.tenantId}>
+              <strong>{tenant.displayName}</strong>
+              <span>{tenant.plan} plan</span>
+              <small>{tenant.usage.dashboardsGenerated}/{tenant.monthlyDashboardLimit} dashboards · {tenant.usage.daxQueriesExecuted}/{tenant.monthlyDaxQueryLimit} DAX</small>
+            </div>
+          ))}
+        </div>
+        <details>
+          <summary>MCP endpoint</summary>
+          <pre>{JSON.stringify({ endpoint: '/mcp', methods: ['tools/list', 'tools/call'], tenantHeader: 'x-tenant-id' }, null, 2)}</pre>
+        </details>
       </section>
 
       {dashboard && (

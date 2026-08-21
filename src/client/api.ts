@@ -1,4 +1,4 @@
-import type { DashboardRequest, McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract } from '../shared/types';
+import type { DashboardRequest, McpToolDescriptor, PublishResult, ReyfinAppManifest, ReyfinDashboardSpec, SemanticContract, TenantEntitlement, TenantUsage } from '../shared/types';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -12,6 +12,12 @@ export async function fetchTools(): Promise<McpToolDescriptor[]> {
   const response = await fetch('/api/tools');
   if (!response.ok) throw new Error('Unable to load MCP tools');
   return (await response.json()).tools;
+}
+
+export async function fetchTenants(): Promise<Array<TenantEntitlement & { usage: TenantUsage }>> {
+  const response = await fetch('/api/tenants');
+  if (!response.ok) throw new Error('Unable to load tenant plans');
+  return (await response.json()).tenants;
 }
 
 export async function generateDashboard(request: DashboardRequest): Promise<ReyfinDashboardSpec> {

@@ -34,5 +34,9 @@ pre { max-height: 360px; overflow: auto; padding: 14px; border-radius: 16px; bac
 a { color: #67e8f9; font-weight: 800; }
 .publish-result { display: grid; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(103,232,249,.1); border: 1px solid rgba(103,232,249,.25); }
 .publish-result p { margin: 0; }
+.tenant-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.tenant-card { display: grid; gap: 4px; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 14px; background: rgba(255,255,255,.08); }
+.tenant-card span { color: #67e8f9; font-weight: 800; text-transform: uppercase; font-size: .8rem; }
+.tenant-card small { color: #cbd5e1; }
 summary { cursor: pointer; color: #67e8f9; font-weight: 800; }
 @media (max-width: 900px) { .steps { grid-template-columns: 1fr; } }

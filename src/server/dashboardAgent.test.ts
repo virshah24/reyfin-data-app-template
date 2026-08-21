@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateDashboardSpec, mcpTools, prepareAppBackendDefinitionManifest, prepareReyfinAppManifest } from './dashboardAgent.js';
 import { semanticContract } from './semanticContract.js';
+import { authorizeDashboardRequest, getUsage, recordUsage, resolveTenant } from './monetization.js';
 
 test('semantic contract is bound to raymodel-POS-Hospitality', () => {
   assert.equal(semanticContract.binding.workspaceId, '7409c81f-4e8d-4c5c-84b6-a1f2d24a0221');
@@ -50,4 +51,19 @@ test('generates an AppBackend definition manifest from semantic dashboard spec',
   assert.equal(appBackendManifest.parts[0]?.path, 'reyfin-app-manifest.json');
   assert.equal(appBackendManifest.decodedJson.semanticModel.semanticModelId, semanticContract.binding.semanticModelId);
   assert.equal(appBackendManifest.decodedJson.dashboard.visuals[0]?.title, 'Transaction count');
+});
+
+test('filters dashboard requests by tenant entitlements and meters usage', () => {
+  const tenant = resolveTenant('starter-client');
+  const request = authorizeDashboardRequest(tenant, {
+    prompt: 'Starter dashboard',
+    audience: 'executive',
+    metricNames: ['transactionCount', 'fraudSignals'],
+    dimensionNames: ['location', 'paymentType']
+  });
+  assert.deepEqual(request.metricNames, ['transactionCount']);
+  assert.deepEqual(request.dimensionNames, ['location']);
+  const before = getUsage(tenant.tenantId).dashboardsGenerated;
+  const after = recordUsage(tenant.tenantId, 'dashboard').dashboardsGenerated;
+  assert.equal(after, before + 1);
 });
