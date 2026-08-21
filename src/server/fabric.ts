@@ -13,22 +13,17 @@ export async function executeDaxQuery(query: string): Promise<unknown> {
     throw new Error('Only read-only DAX EVALUATE queries are allowed.');
   }
 
-  const { stdout } = process.platform === 'win32'
-    ? await execFileAsync('powershell.exe', [
-      '-NoProfile',
-      '-Command',
-      'az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv'
-    ])
-    : await execFileAsync('az', [
-      'account',
-      'get-access-token',
-      '--resource',
-      'https://analysis.windows.net/powerbi/api',
-      '--query',
-      'accessToken',
-      '-o',
-      'tsv'
-    ]);
+  const account = await getAzureAccount();
+  const { stdout } = await runAz([
+    'account',
+    'get-access-token',
+    '--resource',
+    'https://analysis.windows.net/powerbi/api',
+    '--query',
+    'accessToken',
+    '-o',
+    'tsv'
+  ]);
   const token = stdout.trim();
   const response = await fetch(
     `https://api.powerbi.com/v1.0/myorg/groups/${semanticContract.binding.workspaceId}/datasets/${semanticContract.binding.semanticModelId}/executeQueries`,
@@ -46,7 +41,15 @@ export async function executeDaxQuery(query: string): Promise<unknown> {
   );
 
   if (!response.ok) {
-    throw new Error(`DAX query failed: ${response.status} ${await response.text()}`);
+    const body = await response.text();
+    if (response.status === 401) {
+      throw new Error(
+        `DAX query unauthorized for active Azure CLI account ${account.user?.name ?? 'unknown'} in tenant ${account.tenantId ?? 'unknown'}. ` +
+        `The semantic model ${semanticContract.binding.semanticModelName} (${semanticContract.binding.semanticModelId}) is in workspace ${semanticContract.binding.workspaceName} (${semanticContract.binding.workspaceId}). ` +
+        `Sign in with an account that has Build/read access to that workspace/model, then retry. Raw response: ${body}`
+      );
+    }
+    throw new Error(`DAX query failed: ${response.status} ${body}`);
   }
   return response.json();
 }
@@ -87,23 +90,34 @@ export function getStoredManifest(manifestId: string): ReyfinAppManifest | undef
 }
 
 async function getFabricToken(): Promise<string> {
-  const { stdout } = process.platform === 'win32'
-    ? await execFileAsync('powershell.exe', [
-      '-NoProfile',
-      '-Command',
-      'az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv'
-    ])
-    : await execFileAsync('az', [
-      'account',
-      'get-access-token',
-      '--resource',
-      'https://api.fabric.microsoft.com',
-      '--query',
-      'accessToken',
-      '-o',
-      'tsv'
-    ]);
+  const { stdout } = await runAz([
+    'account',
+    'get-access-token',
+    '--resource',
+    'https://api.fabric.microsoft.com',
+    '--query',
+    'accessToken',
+    '-o',
+    'tsv'
+  ]);
   return stdout.trim();
+}
+
+async function getAzureAccount(): Promise<{ tenantId?: string; user?: { name?: string }; id?: string }> {
+  try {
+    const { stdout } = await runAz(['account', 'show', '-o', 'json']);
+    return JSON.parse(stdout) as { tenantId?: string; user?: { name?: string }; id?: string };
+  } catch {
+    return {};
+  }
+}
+
+async function runAz(args: string[]) {
+  if (process.platform === 'win32') {
+    const escapedArgs = args.map((arg) => arg.includes(' ') ? `"${arg.replace(/"/g, '\\"')}"` : arg).join(' ');
+    return execFileAsync('powershell.exe', ['-NoProfile', '-Command', `az ${escapedArgs}`]);
+  }
+  return execFileAsync('az', args);
 }
 
 async function findFabricItem(token: string, displayName: string, type: string): Promise<{ id: string; displayName: string; type: string } | undefined> {
